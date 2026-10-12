@@ -1,13 +1,107 @@
+
 <!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-        <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
-    </head>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Zoológico de Creepypastas</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
 
 <body>
-    <h1>soologico de guaimas</h1>
-        
+    <h1>Zoológico de Creepypastas</h1>
+    <p>Registro de las criaturas que habitan nuestro zoológico.</p>
 
+    <div class="table-container">
+        <table class="creepypasta-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Imagen</th>
+                    <th>Video</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for creepypasta in creepypastas %}
+                <tr>
+                    <td>{{ creepypasta.nombre }}</td>
+
+                    <td>{{ creepypasta.descripcion }}</td>
+
+                    <td>
+                        {% if creepypasta.imagen %}
+                            <img
+                                src="{{ creepypasta.imagen }}"
+                                alt="{{ creepypasta.nombre }}"
+                                class="creepypasta-image"
+                                loading="lazy">
+                        {% else %}
+                            Sin imagen
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if creepypasta.video_url %}
+                            <button
+                                type="button"
+                                class="video-preview"
+                                data-video-url="{{ creepypasta.video_url }}"
+                                data-video-title="{{ creepypasta.nombre }}"
+                                aria-label="Reproducir video de {{ creepypasta.nombre }}">
+
+                                <span class="video-preview__placeholder">
+                                    Vista previa del video
+                                </span>
+
+                                <span class="play-icon" aria-hidden="true">
+                                    ▶
+                                </span>
+                            </button>
+                        {% else %}
+                            Sin video
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">
+                        No hay creepypastas registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Ventana superpuesta para reproducir el video -->
+    <div
+        id="videoModal"
+        class="video-modal"
+        aria-hidden="true">
+
+        <div class="video-modal__content"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="videoModalTitle">
+
+            <button
+                type="button"
+                id="closeVideoModal"
+                class="close-modal"
+                aria-label="Cerrar video">
+                &times;
+            </button>
+
+            <h2 id="videoModalTitle">Reproduciendo video</h2>
+
+            <div id="videoModalPlayer" class="video-modal__player"></div>
+        </div>
+    </div>
 </body>
 </html>

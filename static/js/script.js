@@ -1,125 +1,145 @@
-const animals = [
-    { id: 1, species: "León", color: "Dorado" },
-    { id: 2, species: "Jirafa", color: "Amarillo con manchas cafés" },
-    { id: 3, species: "Pingüino", color: "Negro y blanco" },
-];
 
-const form = document.querySelector("#animal-form");
-const speciesInput = document.querySelector("#species");
-const colorInput = document.querySelector("#color");
-const animalList = document.querySelector("#animal-list");
-const animalCount = document.querySelector("#animal-count");
-const emptyState = document.querySelector("#empty-state");
-const saveButton = document.querySelector("#save-button");
-const cancelButton = document.querySelector("#cancel-button");
-const formMessage = document.querySelector("#form-message");
+console.log("JavaScript del zoológico cargado");
 
-let editingAnimalId = null;
-let nextAnimalId = animals.length + 1;
+// Elementos de la ventana del video
+const videoModal = document.getElementById("videoModal");
+const videoPlayer = document.getElementById("videoModalPlayer");
+const videoTitle = document.getElementById("videoModalTitle");
+const closeVideoModal = document.getElementById("closeVideoModal");
 
-function renderAnimals() {
-    animalList.replaceChildren();
+// Comprobar que el HTML tenga los elementos necesarios
+if (!videoModal || !videoPlayer || !videoTitle || !closeVideoModal) {
+    console.error("No se encontraron los elementos de la ventana de video.");
+} else {
 
-    for (const animal of animals) {
-        const row = document.createElement("tr");
-        const speciesCell = document.createElement("td");
-        const colorCell = document.createElement("td");
-        const actionsCell = document.createElement("td");
-        const actions = document.createElement("div");
-        const editButton = document.createElement("button");
-        const deleteButton = document.createElement("button");
+    // Obtener el ID de un video de YouTube desde su URL
+    function getYouTubeVideoId(url) {
+        try {
+            const parsedUrl = new URL(url);
+            const hostname = parsedUrl.hostname.replace(/^www\./, "");
 
-        speciesCell.textContent = animal.species;
-        colorCell.textContent = animal.color;
-        actions.className = "row-actions";
+            let videoId = null;
 
-        editButton.className = "button button-small button-secondary";
-        editButton.type = "button";
-        editButton.textContent = "Editar";
-        editButton.setAttribute("aria-label", `Editar ${animal.species}`);
-        editButton.addEventListener("click", () => startEditing(animal));
+            if (hostname === "youtu.be") {
+                videoId = parsedUrl.pathname.split("/").filter(Boolean)[0];
+            } else if (
+                hostname === "youtube.com" ||
+                hostname === "m.youtube.com" ||
+                hostname === "youtube-nocookie.com"
+            ) {
+                if (parsedUrl.pathname === "/watch") {
+                    videoId = parsedUrl.searchParams.get("v");
+                } else {
+                    const parts = parsedUrl.pathname.split("/").filter(Boolean);
 
-        deleteButton.className = "button button-small button-danger";
-        deleteButton.type = "button";
-        deleteButton.textContent = "Eliminar";
-        deleteButton.setAttribute("aria-label", `Eliminar ${animal.species}`);
-        deleteButton.addEventListener("click", () => deleteAnimal(animal.id));
+                    if (["embed", "shorts", "live"].includes(parts[0])) {
+                        videoId = parts[1];
+                    }
+                }
+            }
 
-        actions.append(editButton, deleteButton);
-        actionsCell.append(actions);
-        row.append(speciesCell, colorCell, actionsCell);
-        animalList.append(row);
+            return videoId && /^[\w-]{11}$/.test(videoId)
+                ? videoId
+                : null;
+
+        } catch (error) {
+            console.error("URL de video no válida:", url);
+            return null;
+        }
     }
 
-    animalCount.textContent = `${animals.length} ${animals.length === 1 ? "animal" : "animales"}`;
-    emptyState.hidden = animals.length > 0;
-}
+    // Preparar las miniaturas y los botones de reproducción
+    document.querySelectorAll(".video-preview").forEach((button) => {
+        const url = button.dataset.videoUrl;
+        const title = button.dataset.videoTitle || "Video";
+        const videoId = getYouTubeVideoId(url);
+        const placeholder = button.querySelector(
+            ".video-preview__placeholder"
+        );
 
-function startEditing(animal) {
-    editingAnimalId = animal.id;
-    speciesInput.value = animal.species;
-    colorInput.value = animal.color;
-    saveButton.textContent = "Guardar cambios";
-    cancelButton.hidden = false;
-    formMessage.textContent = `Editando: ${animal.species}`;
-    speciesInput.focus();
-}
+        if (videoId && placeholder) {
+            const thumbnail = document.createElement("img");
 
-function resetForm() {
-    editingAnimalId = null;
-    form.reset();
-    saveButton.textContent = "Agregar animal";
-    cancelButton.hidden = true;
-}
+            thumbnail.src =
+                `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
-function deleteAnimal(id) {
-    const animalIndex = animals.findIndex((animal) => animal.id === id);
+            thumbnail.alt = `Vista previa de ${title}`;
+            thumbnail.className = "video-preview__image";
+            thumbnail.loading = "lazy";
 
-    if (animalIndex === -1) {
-        return;
-    }
+            // Si YouTube no proporciona la miniatura, mostrar un aviso
+            thumbnail.addEventListener("error", () => {
+                const message = document.createElement("span");
+                message.className = "video-preview__placeholder";
+                message.textContent = "Miniatura no disponible";
+                thumbnail.replaceWith(message);
+            }, { once: true });
 
-    const [deletedAnimal] = animals.splice(animalIndex, 1);
-    if (editingAnimalId === id) {
-        resetForm();
-    }
-    formMessage.textContent = `${deletedAnimal.species} se eliminó de la lista.`;
-    renderAnimals();
-}
+            placeholder.replaceWith(thumbnail);
 
-form.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const species = speciesInput.value.trim();
-    const color = colorInput.value.trim();
-    if (!species || !color) {
-        formMessage.textContent = "Completa la especie y el color.";
-        return;
-    }
-
-    if (editingAnimalId === null) {
-        animals.push({ id: nextAnimalId++, species, color });
-        formMessage.textContent = `${species} se agregó a la lista.`;
-    } else {
-        const animal = animals.find((item) => item.id === editingAnimalId);
-        if (!animal) {
-            formMessage.textContent = "No se encontró el animal que intentas editar.";
-            resetForm();
-            return;
+        } else if (!videoId && placeholder) {
+            placeholder.textContent = "URL de YouTube no válida";
         }
 
-        animal.species = species;
-        animal.color = color;
-        formMessage.textContent = `Se actualizaron los datos de ${species}.`;
+        // Abrir el video al hacer clic
+        button.addEventListener("click", () => {
+            const videoUrl = button.dataset.videoUrl;
+            const videoTitleText = button.dataset.videoTitle || "Video";
+            const id = getYouTubeVideoId(videoUrl);
+
+            if (!id) {
+                window.open(videoUrl, "_blank", "noopener,noreferrer");
+                return;
+            }
+
+            videoTitle.textContent = videoTitleText;
+            videoPlayer.replaceChildren();
+
+            const iframe = document.createElement("iframe");
+
+            iframe.src =
+                `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+
+            iframe.title = `Video de ${videoTitleText}`;
+            iframe.allow =
+                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+            iframe.allowFullscreen = true;
+            iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+            videoPlayer.appendChild(iframe);
+
+            videoModal.classList.add("is-open");
+            videoModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("modal-open");
+
+            closeVideoModal.focus();
+        });
+    });
+
+    // Cerrar la ventana y detener el video
+    function closeModal() {
+        videoModal.classList.remove("is-open");
+        videoModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+        videoPlayer.replaceChildren();
     }
 
-    resetForm();
-    renderAnimals();
-});
+    closeVideoModal.addEventListener("click", closeModal);
 
-cancelButton.addEventListener("click", () => {
-    resetForm();
-    formMessage.textContent = "Edición cancelada.";
-});
+    // Cerrar al pulsar el fondo oscuro
+    videoModal.addEventListener("click", (event) => {
+        if (event.target === videoModal) {
+            closeModal();
+        }
+    });
 
-renderAnimals();
+    // Cerrar con la tecla Escape
+    document.addEventListener("keydown", (event) => {
+        if (
+            event.key === "Escape" &&
+            videoModal.classList.contains("is-open")
+        ) {
+            closeModal();
+        }
+    });
+}
