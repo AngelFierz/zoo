@@ -13,82 +13,198 @@
 </head>
 
 <body>
-    <h1>Zoológico de Creepypastas</h1>
-    <p>Registro de las criaturas que habitan nuestro zoológico.</p>
+    <main class="page">
 
-    <div class="table-container">
-        <table class="creepypasta-table">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th>Imagen</th>
-                    <th>Video</th>
-                </tr>
-            </thead>
+        <header class="page-header">
+            <h1>Zoológico de Creepypastas</h1>
+            <p>Registro de las criaturas que habitan nuestro zoológico.</p>
+        </header>
 
-            <tbody>
-                {% for creepypasta in creepypastas %}
-                <tr>
-                    <td>{{ creepypasta.nombre }}</td>
-
-                    <td>{{ creepypasta.descripcion }}</td>
-
-                    <td>
-                        {% if creepypasta.imagen %}
-                            <img
-                                src="{{ creepypasta.imagen }}"
-                                alt="{{ creepypasta.nombre }}"
-                                class="creepypasta-image"
-                                loading="lazy">
-                        {% else %}
-                            Sin imagen
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if creepypasta.video_url %}
-                            <button
-                                type="button"
-                                class="video-preview"
-                                data-video-url="{{ creepypasta.video_url }}"
-                                data-video-title="{{ creepypasta.nombre }}"
-                                aria-label="Reproducir video de {{ creepypasta.nombre }}">
-
-                                <span class="video-preview__placeholder">
-                                    Vista previa del video
-                                </span>
-
-                                <span class="play-icon" aria-hidden="true">
-                                    ▶
-                                </span>
-                            </button>
-                        {% else %}
-                            Sin video
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="4">
-                        No hay creepypastas registradas.
-                    </td>
-                </tr>
+        <!-- Mensajes de Flask -->
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                {% for categoria, mensaje in mensajes %}
+                    <p class="form-message {{ categoria }}">
+                        {{ mensaje }}
+                    </p>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario para agregar o editar -->
+        <section class="panel">
+            {% if registro_editar %}
+                <h2>Editar creepypasta</h2>
+                <p>Modifica los datos del registro seleccionado.</p>
+
+                <form
+                    action="{{ url_for('editar', registro_id=registro_editar.id) }}"
+                    method="POST"
+                    class="animal-form">
+            {% else %}
+                <h2>Agregar creepypasta</h2>
+                <p>Registra una nueva criatura en el zoológico.</p>
+
+                <form
+                    action="{{ url_for('agregar') }}"
+                    method="POST"
+                    class="animal-form">
+            {% endif %}
+
+                <div class="field">
+                    <label for="nombre">Nombre *</label>
+                    <input
+                        type="text"
+                        id="nombre"
+                        name="nombre"
+                        maxlength="100"
+                        required
+                        value="{{ registro_editar.nombre if registro_editar else '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="descripcion">Descripción *</label>
+                    <textarea
+                        id="descripcion"
+                        name="descripcion"
+                        rows="3"
+                        required>{{ registro_editar.descripcion if registro_editar else '' }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label for="imagen">URL de la imagen</label>
+                    <input
+                        type="url"
+                        id="imagen"
+                        name="imagen"
+                        placeholder="https://..."
+                        value="{{ registro_editar.imagen if registro_editar and registro_editar.imagen else '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="video_url">URL del video</label>
+                    <input
+                        type="url"
+                        id="video_url"
+                        name="video_url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value="{{ registro_editar.video_url if registro_editar and registro_editar.video_url else '' }}">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="button button-primary">
+                        {{ "Guardar cambios" if registro_editar else "Agregar creepypasta" }}
+                    </button>
+
+                    {% if registro_editar %}
+                        <a href="{{ url_for('index') }}" class="button">
+                            Cancelar
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </section>
+
+        <!-- Tabla de creepypastas -->
+        <section class="panel">
+            <h2>Creepypastas registradas</h2>
+
+            <div class="table-container">
+                <table class="creepypasta-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Imagen</th>
+                            <th>Video</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for creepypasta in creepypastas %}
+                        <tr>
+                            <td>{{ creepypasta.nombre }}</td>
+
+                            <td>{{ creepypasta.descripcion }}</td>
+
+                            <td>
+                                {% if creepypasta.imagen %}
+                                    <img
+                                        src="{{ creepypasta.imagen }}"
+                                        alt="{{ creepypasta.nombre }}"
+                                        class="creepypasta-image"
+                                        loading="lazy">
+                                {% else %}
+                                    Sin imagen
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if creepypasta.video_url %}
+                                    <button
+                                        type="button"
+                                        class="video-preview"
+                                        data-video-url="{{ creepypasta.video_url }}"
+                                        data-video-title="{{ creepypasta.nombre }}"
+                                        aria-label="Reproducir video de {{ creepypasta.nombre }}">
+
+                                        <span class="video-preview__placeholder">
+                                            Vista previa del video
+                                        </span>
+
+                                        <span class="play-icon" aria-hidden="true">
+                                            ▶
+                                        </span>
+                                    </button>
+                                {% else %}
+                                    Sin video
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="row-actions">
+                                    <a
+                                        href="{{ url_for('editar', registro_id=creepypasta.id) }}"
+                                        class="button button-small">
+                                        Editar
+                                    </a>
+
+                                    <form
+                                        action="{{ url_for('eliminar', registro_id=creepypasta.id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('¿Seguro que quieres eliminar esta creepypasta?');">
+
+                                        <button
+                                            type="submit"
+                                            class="button button-small button-danger">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                No hay creepypastas registradas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
 
     <!-- Ventana superpuesta para reproducir el video -->
-    <div
-        id="videoModal"
-        class="video-modal"
-        aria-hidden="true">
-
-        <div class="video-modal__content"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="videoModalTitle">
+    <div id="videoModal" class="video-modal" aria-hidden="true">
+        <div
+            class="video-modal__content"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="videoModalTitle">
 
             <button
                 type="button"
