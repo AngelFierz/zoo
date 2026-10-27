@@ -8,8 +8,6 @@
 body {
     margin: 0;
     padding: 24px;
-    /* Cambia el '0.75' (75% de opacidad oscura) por un número menor si quieres que se vea más el GIF, 
-       o mayor si quieres que el fondo sea más oscuro y se lea mejor el texto. */
     background-image: linear-gradient(rgba(16, 17, 23, 0.75), rgba(16, 17, 23, 0.75)), 
                       url("../images/static.gif");
     background-repeat: no-repeat;
