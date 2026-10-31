@@ -1,14 +1,12 @@
-# Imagen base con python 3.14
-FROM python:3.14
 
-# Establecer el directorio de trabajo
+FROM python:3.12-slim
+
 WORKDIR /app
 
-# Copiar los archivos de la aplicación al contenedor
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-# Instalar las dependencias del proyecto
-RUN pip install -r requirements.txt
-
-# Comando que se ejecutará al iniciar el contenedor
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 app:app"]
